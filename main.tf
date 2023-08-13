@@ -173,7 +173,7 @@ module "web_alb" {
 module "autoscaling" {
   # https://registry.terraform.io/modules/terraform-aws-modules/autoscaling/aws/latest
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "6.${var.env.network_prefix}"
+  version = "6.10.0"
   # insert the 1 required variable here
   name = "web-auto-scaling"
 
