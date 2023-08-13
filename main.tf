@@ -32,6 +32,9 @@ module "web_vpc" {
   enable_nat_gateway = true
   # enable_vpn_gateway = true
 
+  single_nat_gateway = false
+  one_nat_gateway_per_az = true
+
   tags = {
     Terraform = "true"
     Environment = "Dev"
@@ -114,7 +117,7 @@ module "web_alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 8.0"
 
-  name = "web-alb"
+  name = "alb"
 
   load_balancer_type = "application"
 
