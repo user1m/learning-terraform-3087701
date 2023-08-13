@@ -57,7 +57,7 @@ module "web_sg" {
   name = "web_new_sec"
   
   # vpc_id      = data.aws_vpc.default.id
-  vpc_id      = module.vpc.public_subnets[0]
+  vpc_id      = module.web_vpc.public_subnets[0]
 
   # https://github.com/terraform-aws-modules/terraform-aws-security-group/blob/master/rules.tf
   ingress_rules = ["http-80-tcp", "https-443-tcp"]
@@ -71,7 +71,8 @@ module "web_sg" {
 resource "aws_security_group" "web" {
   name        = "web"
   description = "Allow HTTP and HTTPS inbound traffic"
-  vpc_id      = data.aws_vpc.default.id  
+  # vpc_id      = data.aws_vpc.default.id  
+  vpc_id = module.web_vpc.vpc_id
 }
 
 resource "aws_security_group_rule" "web_http_in" {
@@ -118,7 +119,7 @@ module "web_alb" {
 
   vpc_id             = module.web_vpc.vpc_id
   subnets            = module.web_vpc.public_subnets
-  security_groups    = module.web_sg.security_group_id
+  security_groups    = [ module.web_sg.security_group_id ]
 
   # access_logs = {
   #   bucket = "my-alb-logs"
