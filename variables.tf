@@ -15,12 +15,12 @@ variable "env" {
 
   type = object({
     name          = string
-    netwok_prefix = string
+    network_prefix = string
   })
 
   default = {
     name          = "dev"
-    netwok_prefix = "10.0"
+    network_prefix = "10.0"
   }
 }
 
