@@ -41,18 +41,18 @@ module "web_vpc" {
   }
 }
 
-resource "aws_instance" "web" {
-  ami           = data.aws_ami.app_ami.id
-  instance_type = var.instance_type
-  vpc_security_group_ids = [ 
-    # aws_security_group.web.id 
-    # https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/latest?tab=outputs
-    module.web_sg.security_group_id
-  ]
-  tags = {
-    Name = "HelloWorld"
-  }
-}
+# resource "aws_instance" "web" {
+#   ami           = data.aws_ami.app_ami.id
+#   instance_type = var.instance_type
+#   vpc_security_group_ids = [ 
+#     # aws_security_group.web.id 
+#     # https://registry.terraform.io/modules/terraform-aws-modules/security-group/aws/latest?tab=outputs
+#     module.web_sg.security_group_id
+#   ]
+#   tags = {
+#     Name = "HelloWorld"
+#   }
+# }
 
 module "web_sg" {
   source  = "terraform-aws-modules/security-group/aws"
@@ -135,16 +135,16 @@ module "web_alb" {
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "instance"
-      targets = {
-        my_target = {
-          target_id = aws_instance.web.id
-          port = 80
-        }
-        # my_other_target = {
-        #   target_id = "i-a1b2c3d4e5f6g7h8i"
-        #   port = 8080
-        # }
-      }
+      # targets = {
+      #   # my_target = {
+      #   #   target_id = aws_instance.web.id
+      #   #   port = 80
+      #   # }
+      #   # my_other_target = {
+      #   #   target_id = "i-a1b2c3d4e5f6g7h8i"
+      #   #   port = 8080
+      #   # }
+      # }
     }
   ]
 
@@ -168,4 +168,23 @@ module "web_alb" {
   tags = {
     Environment = "Dev"
   }
+}
+
+module "autoscaling" {
+  # https://registry.terraform.io/modules/terraform-aws-modules/autoscaling/aws/latest
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "6.10.0"
+  # insert the 1 required variable here
+  name = "web-auto-scaling"
+
+  min_size = 1
+  max_size = 2
+
+  vpc_zone_identifier = module.web_vpc.public_subnets
+  target_group_arns = module.web_alb.target_group_arns
+  security_groups = module.web_vpc.vpc_id
+
+  image_id = data.aws_ami.app_ami.id
+  instance_type = var.instance_type
+
 }
