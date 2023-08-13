@@ -3,7 +3,7 @@ data "aws_ami" "app_ami" {
 
   filter {
     name   = "name"
-    values = ["bitnami-tomcat-*-x86_64-hvm-ebs-nami"]
+    values = var.ami_filter.values
   }
 
   filter {
@@ -11,7 +11,7 @@ data "aws_ami" "app_ami" {
     values = ["hvm"]
   }
 
-  owners = ["979382823631"] # Bitnami
+  owners = var.ami_filter.owners
 }
 
 # data "aws_vpc" "default" {
@@ -22,12 +22,12 @@ module "web_vpc" {
   # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest
   source = "terraform-aws-modules/vpc/aws"
 
-  name = "dev_vpc"
-  cidr = "10.0.0.0/16"
+  name = "${var.env.name}_vpc"
+  cidr = "${var.env.network_prefix}.0.0/16"
 
   azs             = ["us-west-2a", "us-west-2b", "us-west-2c"]
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  private_subnets = ["${var.env.network_prefix}.1.0/24", "${var.env.network_prefix}.2.0/24", "${var.env.network_prefix}.3.0/24"]
+  public_subnets  = ["${var.env.network_prefix}.101.0/24", "${var.env.network_prefix}.102.0/24", "${var.env.network_prefix}.103.0/24"]
 
   enable_nat_gateway = true
   # enable_vpn_gateway = true
@@ -37,7 +37,7 @@ module "web_vpc" {
 
   tags = {
     Terraform = "true"
-    Environment = "Dev"
+    Environment = var.env.name
   }
 }
 
@@ -57,7 +57,7 @@ module "web_vpc" {
 module "web_sg" {
   source  = "terraform-aws-modules/security-group/aws"
   version = "5.1.0"
-  name = "web_new_sec"
+  name = "${var.env.name}-web_new_sec"
   
   # vpc_id      = data.aws_vpc.default.id
   # vpc_id      = module.web_vpc.public_subnets[0]
@@ -73,7 +73,7 @@ module "web_sg" {
 }
 
 resource "aws_security_group" "web" {
-  name        = "web"
+  name        = "${var.env.name}-web"
   description = "Allow HTTP and HTTPS inbound traffic"
   # vpc_id      = data.aws_vpc.default.id  
   vpc_id = module.web_vpc.vpc_id
@@ -117,7 +117,7 @@ module "web_alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "~> 8.0"
 
-  name = "alb"
+  name = "${var.env.name}-alb"
 
   load_balancer_type = "application"
 
@@ -131,7 +131,7 @@ module "web_alb" {
 
   target_groups = [
     {
-      name_prefix      = "web-"
+      name_prefix      = "web-${var.env.name}-"
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "instance"
@@ -166,19 +166,19 @@ module "web_alb" {
   ]
 
   tags = {
-    Environment = "Dev"
+    Environment = var.env.name
   }
 }
 
 module "autoscaling" {
   # https://registry.terraform.io/modules/terraform-aws-modules/autoscaling/aws/latest
   source  = "terraform-aws-modules/autoscaling/aws"
-  version = "6.10.0"
+  version = "6.${var.env.network_prefix}"
   # insert the 1 required variable here
   name = "web-auto-scaling"
 
-  min_size = 1
-  max_size = 2
+  min_size = var.asg_min_size
+  max_size = var.asg_max_size
 
   vpc_zone_identifier = module.web_vpc.public_subnets
   target_group_arns = module.web_alb.target_group_arns
