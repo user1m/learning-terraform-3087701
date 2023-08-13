@@ -22,7 +22,7 @@ module "web_vpc" {
   # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest
   source = "terraform-aws-modules/vpc/aws"
 
-  name = "dev_env"
+  name = "dev_vpc"
   cidr = "10.0.0.0/16"
 
   azs             = ["us-west-2a", "us-west-2b", "us-west-2c"]
@@ -34,7 +34,7 @@ module "web_vpc" {
 
   tags = {
     Terraform = "true"
-    Environment = "dev"
+    Environment = "Dev"
   }
 }
 
@@ -57,7 +57,8 @@ module "web_sg" {
   name = "web_new_sec"
   
   # vpc_id      = data.aws_vpc.default.id
-  vpc_id      = module.web_vpc.public_subnets[0]
+  # vpc_id      = module.web_vpc.public_subnets[0]
+  vpc_id = module.web_vpc.vpc_id
 
   # https://github.com/terraform-aws-modules/terraform-aws-security-group/blob/master/rules.tf
   ingress_rules = ["http-80-tcp", "https-443-tcp"]
