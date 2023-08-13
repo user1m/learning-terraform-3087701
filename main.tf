@@ -14,8 +14,27 @@ data "aws_ami" "app_ami" {
   owners = ["979382823631"] # Bitnami
 }
 
-data "aws_vpc" "default" {
-  default = true
+# data "aws_vpc" "default" {
+#   default = true
+# }
+
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+
+  name = "dev_env"
+  cidr = "10.0.0.0/16"
+
+  azs             = ["us-west-2a", "us-west-2b", "us-west-2c"]
+  # private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  enable_nat_gateway = true
+  # enable_vpn_gateway = true
+
+  tags = {
+    Terraform = "true"
+    Environment = "dev"
+  }
 }
 
 resource "aws_instance" "web" {
@@ -36,7 +55,8 @@ module "web_sg" {
   version = "5.1.0"
   name = "web_new_sec"
   
-  vpc_id      = data.aws_vpc.default.id
+  # vpc_id      = data.aws_vpc.default.id
+  vpc_id      = module.vpc.public_subnets[0]
 
   # https://github.com/terraform-aws-modules/terraform-aws-security-group/blob/master/rules.tf
   ingress_rules = ["http-80-tcp", "https-443-tcp"]
