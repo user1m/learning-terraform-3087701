@@ -131,7 +131,7 @@ module "web_alb" {
 
   target_groups = [
     {
-      name_prefix      = "web-${var.env.name}-"
+      name_prefix      = "${var.env.name}-"
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "instance"

@@ -5,3 +5,7 @@
 # output "instance_arn" {
 #  value = aws_instance.web.arn
 # }
+
+output "web_url" {
+    value = module.web_alb.lb_dns_name
+}
