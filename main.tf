@@ -18,7 +18,8 @@ data "aws_ami" "app_ami" {
 #   default = true
 # }
 
-module "vpc" {
+module "web_vpc" {
+  # https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest
   source = "terraform-aws-modules/vpc/aws"
 
   name = "dev_env"
@@ -104,4 +105,62 @@ resource "aws_security_group_rule" "web_out" {
   cidr_blocks              = ["0.0.0.0/0"]
 
   security_group_id = aws_security_group.web.id
+}
+
+module "web_alb" {
+  # https://registry.terraform.io/modules/terraform-aws-modules/alb/aws/latest
+  source  = "terraform-aws-modules/alb/aws"
+  version = "~> 8.0"
+
+  name = "web-alb"
+
+  load_balancer_type = "application"
+
+  vpc_id             = module.web_vpc.vpc_id
+  subnets            = module.web_vpc.public_subnets
+  security_groups    = module.web_sg.security_group_id
+
+  # access_logs = {
+  #   bucket = "my-alb-logs"
+  # }
+
+  target_groups = [
+    {
+      name_prefix      = "web-"
+      backend_protocol = "HTTP"
+      backend_port     = 80
+      target_type      = "instance"
+      targets = {
+        my_target = {
+          target_id = aws_instance.web.id
+          port = 80
+        }
+        # my_other_target = {
+        #   target_id = "i-a1b2c3d4e5f6g7h8i"
+        #   port = 8080
+        # }
+      }
+    }
+  ]
+
+  # https_listeners = [
+  #   {
+  #     port               = 443
+  #     protocol           = "HTTPS"
+  #     certificate_arn    = "arn:aws:iam::123456789012:server-certificate/test_cert-123456789012"
+  #     target_group_index = 0
+  #   }
+  # ]
+
+  http_tcp_listeners = [
+    {
+      port               = 80
+      protocol           = "HTTP"
+      target_group_index = 0
+    }
+  ]
+
+  tags = {
+    Environment = "Dev"
+  }
 }
